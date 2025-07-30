@@ -7,17 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ticket Status Tracker</title>
 
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0"
-  }
-}
-</script>
+
 <link rel="stylesheet" href="/index.css">
-</head>
+    
+    <!-- Backend port detection script -->
+    <script>
+      // Try to detect backend port from common ports
+      (function() {
+        const commonPorts = [5000, 5001, 5002, 5003, 5004, 5005];
+        const storedPort = localStorage.getItem('backendPort');
+        
+        if (storedPort) {
+          window.BACKEND_PORT = storedPort;
+          return;
+        }
+        
+        // Try to ping common ports to find the backend
+        const checkPort = async (port) => {
+          try {
+            const response = await fetch(`http://localhost:${port}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: 'test@test.com' })
+            });
+            return response.status !== 404; // If we get a response, port is likely correct
+          } catch {
+            return false;
+          }
+        };
+        
+        // Check ports in parallel
+        Promise.race(commonPorts.map(async (port) => {
+          const isAvailable = await checkPort(port);
+          if (isAvailable) {
+            localStorage.setItem('backendPort', port.toString());
+            window.BACKEND_PORT = port.toString();
+          }
+        }));
+      })();
+    </script>
+  </head>
   <body class="bg-slate-100 dark:bg-slate-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

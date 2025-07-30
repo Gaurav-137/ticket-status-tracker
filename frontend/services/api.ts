@@ -1,6 +1,32 @@
 import { User, Ticket, TicketStatus, StatusHistory } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// Dynamic API URL detection
+const getApiBaseUrl = (): string => {
+  // Try to get port from window variable (set by HTML script)
+  const backendPort = (window as any).BACKEND_PORT || localStorage.getItem('backendPort');
+  
+  if (backendPort) {
+    return `http://localhost:${backendPort}/api`;
+  }
+  
+  const currentPort = window.location.port;
+  
+  // If frontend is running on a different port, try to guess backend port
+  if (currentPort && currentPort !== '3000') {
+    const frontendPort = parseInt(currentPort);
+    const backendPort = frontendPort + 2000; // Common pattern
+    return `http://localhost:${backendPort}/api`;
+  }
+  
+  // Default fallback
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Cache for API responses to improve performance
+const apiCache = new Map();
+const CACHE_DURATION = 30000; // 30 seconds
 
 // --- Helper Functions ---
 const getStoredUser = (): User | null => {
@@ -25,21 +51,61 @@ const removeStoredUser = (): void => {
     window.localStorage.removeItem('currentUser');
 };
 
-const apiFetch = async (url: string, options: RequestInit = {}) => {
-    const res = await fetch(`${API_BASE_URL}${url}`, {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        ...options,
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-        throw new Error(data.message || 'An API error occurred');
-    }
-    return data.data;
+const getCachedResponse = (url: string) => {
+  const cached = apiCache.get(url);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
 };
 
+const setCachedResponse = (url: string, data: any) => {
+  apiCache.set(url, {
+    data,
+    timestamp: Date.now()
+  });
+};
+
+const apiFetch = async (url: string, options: RequestInit = {}) => {
+    const fullUrl = `${API_BASE_URL}${url}`;
+    
+    // Check cache for GET requests
+    if (!options.method || options.method === 'GET') {
+      const cached = getCachedResponse(fullUrl);
+      if (cached) {
+        return cached;
+      }
+    }
+    
+    try {
+        const res = await fetch(fullUrl, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            ...options,
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.message || 'An API error occurred');
+        }
+        
+        // Cache successful GET responses
+        if (!options.method || options.method === 'GET') {
+          setCachedResponse(fullUrl, data.data);
+        }
+        
+        return data.data;
+    } catch (error) {
+        console.error(`API Error for ${fullUrl}:`, error);
+        throw error;
+    }
+};
+
+// Clear cache when needed
+export const clearApiCache = () => {
+  apiCache.clear();
+};
 
 // --- User API ---
 export const register = async (name: string, email: string): Promise<User> => {
@@ -48,6 +114,7 @@ export const register = async (name: string, email: string): Promise<User> => {
       body: JSON.stringify({ name, email }),
   });
   storeUser(user);
+  clearApiCache(); // Clear cache after user changes
   return user;
 };
 
@@ -57,22 +124,21 @@ export const login = async (email: string): Promise<User> => {
       body: JSON.stringify({ email }),
   });
   storeUser(user);
+  clearApiCache(); // Clear cache after user changes
   return user;
 };
 
 export const logout = (): Promise<void> => {
     return new Promise((resolve) => {
         removeStoredUser();
+        clearApiCache(); // Clear cache on logout
         resolve();
     });
 };
 
-export const getCurrentUser = (): Promise<User | null> => {
-    return new Promise((resolve) => {
-        resolve(getStoredUser());
-    });
+export const getCurrentUser = (): User | null => {
+    return getStoredUser();
 };
-
 
 // --- Ticket API ---
 const formatTicket = (ticket: any): Ticket => ({
@@ -97,6 +163,7 @@ export const createTicket = async (data: { title: string; description: string; o
         method: 'POST',
         body: JSON.stringify(data)
     });
+    clearApiCache(); // Clear cache after creating ticket
     return formatTicket(newTicket);
 };
 
@@ -105,6 +172,7 @@ export const updateTicket = async (id: string, data: Partial<Pick<Ticket, 'title
         method: 'PUT',
         body: JSON.stringify(data)
     });
+    clearApiCache(); // Clear cache after updating ticket
     return formatTicket(updatedTicket);
 };
 
@@ -113,11 +181,14 @@ export const updateTicketStatus = async (id: string, status: TicketStatus): Prom
         method: 'PATCH',
         body: JSON.stringify({ status })
     });
+    clearApiCache(); // Clear cache after status change
     return formatTicket(updatedTicket);
 };
 
 export const deleteTicket = (id: string): Promise<void> => {
-    return apiFetch(`/tickets/${id}`, { method: 'DELETE' });
+    return apiFetch(`/tickets/${id}`, { method: 'DELETE' }).then(() => {
+        clearApiCache(); // Clear cache after deleting ticket
+    });
 };
 
 export const getTicketHistory = async (id: string): Promise<StatusHistory[]> => {

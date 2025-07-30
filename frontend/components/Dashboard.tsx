@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTickets } from '../hooks/useTickets';
 import TicketCard from './TicketCard';
@@ -13,6 +13,13 @@ const Dashboard: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+
+  // Memoize sorted tickets for better performance
+  const sortedTickets = useMemo(() => {
+    return [...tickets].sort((a, b) => 
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  }, [tickets]);
 
   const handleOpenCreateModal = () => {
     setEditingTicket(null);
@@ -41,17 +48,25 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {loading && (
+      {loading && tickets.length === 0 && (
         <div className="flex justify-center items-center h-64">
-          <Spinner />
+          <div className="text-center">
+            <Spinner />
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading tickets...</p>
+          </div>
         </div>
       )}
-      {error && <p className="text-center text-red-500">{error}</p>}
+      
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+          <p className="text-red-600 dark:text-red-400 text-center">{error}</p>
+        </div>
+      )}
       
       {!loading && !error && (
-        tickets.length > 0 ? (
+        sortedTickets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {tickets.map((ticket) => (
+            {sortedTickets.map((ticket) => (
               <TicketCard 
                 key={ticket.id} 
                 ticket={ticket} 

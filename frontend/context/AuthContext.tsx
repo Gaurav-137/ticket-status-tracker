@@ -18,28 +18,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const storedUser = await api.getCurrentUser();
-      setUser(storedUser);
-      setLoading(false);
-    };
-    checkUser();
+    // Use synchronous getCurrentUser for faster initial load
+    const storedUser = api.getCurrentUser();
+    setUser(storedUser);
+    setLoading(false);
   }, []);
 
   const login = async (email: string) => {
     setLoading(true);
-    const loggedInUser = await api.login(email);
-    setUser(loggedInUser);
-    setLoading(false);
-    return loggedInUser;
+    try {
+      const loggedInUser = await api.login(email);
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (error) {
+      console.error('Login error:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (name: string, email: string) => {
     setLoading(true);
-    const newUser = await api.register(name, email);
-    setUser(newUser);
-    setLoading(false);
-    return newUser;
+    try {
+      const newUser = await api.register(name, email);
+      setUser(newUser);
+      return newUser;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {

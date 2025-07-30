@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Ticket, TicketStatus, User } from '../types';
 import * as api from '../services/api';
 
@@ -6,11 +6,22 @@ export const useTickets = (user: User | null) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const lastFetchTime = useRef<number>(0);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchTickets = useCallback(async (showLoading = true) => {
+  const fetchTickets = useCallback(async (showLoading = true, force = false) => {
     if (!user) return;
+    
+    const now = Date.now();
+    // Prevent multiple simultaneous requests and add debouncing
+    if (!force && now - lastFetchTime.current < 1000) {
+      return;
+    }
+    
     try {
-      if(showLoading) setLoading(true);
+      if (showLoading) setLoading(true);
+      lastFetchTime.current = now;
+      
       const userTickets = await api.getTickets(user.id);
       setTickets(userTickets);
       setError(null);
@@ -18,30 +29,37 @@ export const useTickets = (user: User | null) => {
       setError(err.message || 'Failed to fetch tickets.');
       console.error(err);
     } finally {
-      if(showLoading) setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (user) {
-        fetchTickets();
+      fetchTickets(true, true); // Force initial fetch
 
-        // Poll for updates every 15 seconds to reflect automated changes from backend
-        const intervalId = setInterval(() => {
-            console.log('Polling for ticket updates...');
-            fetchTickets(false); // Fetch without showing the main loading spinner
-        }, 15000);
+      // Poll for updates every 30 seconds to reflect automated changes from backend
+      const intervalId = setInterval(() => {
+        fetchTickets(false); // Fetch without showing the main loading spinner
+      }, 30000);
 
-        return () => clearInterval(intervalId);
+      return () => {
+        clearInterval(intervalId);
+        if (fetchTimeoutRef.current) {
+          clearTimeout(fetchTimeoutRef.current);
+        }
+      };
     }
   }, [user, fetchTickets]);
 
   const createTicket = async (title: string, description: string) => {
     if (!user) return;
     try {
-      // The old api took ownerName, the new backend resolves it from ownerId
       await api.createTicket({ title, description, ownerId: user.id });
-      await fetchTickets(false);
+      // Use debounced refresh to avoid immediate refetch
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      fetchTimeoutRef.current = setTimeout(() => fetchTickets(false), 500);
     } catch (err: any) {
       setError(err.message || 'Failed to create ticket.');
       console.error(err);
@@ -52,9 +70,14 @@ export const useTickets = (user: User | null) => {
     if (!user) return;
     try {
       await api.updateTicket(id, data);
-      await fetchTickets(false);
+      // Optimistic update for better UX
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === id ? { ...ticket, ...data } : ticket
+      ));
     } catch (err: any) {
       setError(err.message || 'Failed to update ticket.');
+      // Revert on error
+      fetchTickets(false);
       console.error(err);
     }
   };
@@ -63,10 +86,15 @@ export const useTickets = (user: User | null) => {
     if (!user) return;
     try {
       await api.updateTicketStatus(id, status);
-      await fetchTickets(false);
+      // Optimistic update for better UX
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === id ? { ...ticket, status } : ticket
+      ));
     } catch (err: any) {
-        setError(err.message || 'Failed to update ticket status.');
-        console.error(err);
+      setError(err.message || 'Failed to update ticket status.');
+      // Revert on error
+      fetchTickets(false);
+      console.error(err);
     }
   };
 
@@ -94,5 +122,15 @@ export const useTickets = (user: User | null) => {
     }
   }
 
-  return { tickets, loading, error, createTicket, updateTicket, updateTicketStatus, deleteTicket, getTicketHistory, refreshTickets: fetchTickets };
+  return { 
+    tickets, 
+    loading, 
+    error, 
+    createTicket, 
+    updateTicket, 
+    updateTicketStatus, 
+    deleteTicket, 
+    getTicketHistory, 
+    refreshTickets: () => fetchTickets(true, true) 
+  };
 };
