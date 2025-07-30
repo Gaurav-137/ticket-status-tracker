@@ -10,12 +10,13 @@ import {
     getTicketHistory,
     bulkStatusUpdate
 } from '../controllers/ticketController.js';
+import { validateTicketCreation, validateStatusUpdate } from '../middleware/validation.js';
 
 const router = express.Router();
 
 router.route('/')
     .get(getAllTickets)
-    .post(createTicket);
+    .post(validateTicketCreation, createTicket);
 
 router.route('/user/:userId')
     .get(getUserTickets);
@@ -29,7 +30,7 @@ router.route('/:id')
     .delete(deleteTicket);
     
 router.route('/:id/status')
-    .patch(updateStatus);
+    .patch(validateStatusUpdate, updateStatus);
 
 router.route('/:id/history')
     .get(getTicketHistory);

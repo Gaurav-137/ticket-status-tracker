@@ -1,28 +1,9 @@
 import { User, Ticket, TicketStatus, StatusHistory } from '../types';
 
-// Dynamic API URL detection
-const getApiBaseUrl = (): string => {
-  // Try to get port from window variable (set by HTML script)
-  const backendPort = (window as any).BACKEND_PORT || localStorage.getItem('backendPort');
-  
-  if (backendPort) {
-    return `http://localhost:${backendPort}/api`;
-  }
-  
-  const currentPort = window.location.port;
-  
-  // If frontend is running on a different port, try to guess backend port
-  if (currentPort && currentPort !== '3000') {
-    const frontendPort = parseInt(currentPort);
-    const backendPort = frontendPort + 2000; // Common pattern
-    return `http://localhost:${backendPort}/api`;
-  }
-  
-  // Default fallback
-  return 'http://localhost:5000/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// API URL with environment detection
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5001/api'
+  : 'https://ticket-tracker-backend.onrender.com/api';
 
 // Cache for API responses to improve performance
 const apiCache = new Map();

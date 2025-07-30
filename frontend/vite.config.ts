@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  root: 'frontend',
   build: {
     outDir: '../dist',
     rollupOptions: {
@@ -17,11 +16,14 @@ export default defineConfig({
     // Performance optimizations
     minify: 'terser',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Faster builds
+    target: 'esnext',
+    cssCodeSplit: false
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'frontend'),
+      '@': path.resolve(__dirname, '.'),
     }
   },
   server: {
@@ -36,10 +38,15 @@ export default defineConfig({
   },
   // Performance optimizations
   optimizeDeps: {
-    include: ['react', 'react-dom']
+    include: ['react', 'react-dom'],
+    force: true // Force pre-bundling
   },
   // Reduce bundle size
   esbuild: {
-    drop: ['console', 'debugger']
-  }
-});
+    drop: ['console', 'debugger'],
+    target: 'esnext'
+  },
+  // Faster development
+  clearScreen: false,
+  logLevel: 'warn'
+}); 

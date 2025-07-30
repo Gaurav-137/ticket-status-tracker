@@ -16,17 +16,12 @@ const AuthScreen: React.FC = () => {
     setError('');
     try {
       if (mode === 'login') {
-        const user = await login(email);
-        if (!user) {
-          setError('Login failed. Please check your email or register.');
-        }
+        await login(email);
       } else {
-        const user = await register(name, email);
-        if (!user) {
-          setError('Registration failed. This email might already be in use.');
-        }
+        await register(name, email);
       }
     } catch (err: any) {
+      console.error('Auth error:', err);
       setError(err.message || 'An error occurred.');
     }
   };

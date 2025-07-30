@@ -14,7 +14,12 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-vercel-app.vercel.app']
+    : ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -24,11 +29,11 @@ import ticketRoutes from './routes/ticketRoutes.js';
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 
-// Basic error handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
-});
+// Import error handler
+import { errorHandler } from './middleware/errorHandler.js';
+
+// Error handling middleware
+app.use(errorHandler);
 
 const findAvailablePort = (startPort, maxAttempts = 10) => {
     return new Promise((resolve, reject) => {

@@ -14,15 +14,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Use synchronous getCurrentUser for faster initial load
-    const storedUser = api.getCurrentUser();
-    setUser(storedUser);
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState<User | null>(() => {
+    // Initialize user state synchronously for faster loading
+    return api.getCurrentUser();
+  });
+  const [loading, setLoading] = useState(false);
 
   const login = async (email: string) => {
     setLoading(true);
@@ -31,11 +27,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(loggedInUser);
       return loggedInUser;
     } catch (error) {
-      console.error('Login error:', error);
-      return null;
-    } finally {
       setLoading(false);
+      throw error;
     }
+    setLoading(false);
   };
 
   const register = async (name: string, email: string) => {
@@ -45,11 +40,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(newUser);
       return newUser;
     } catch (error) {
-      console.error('Registration error:', error);
-      return null;
-    } finally {
       setLoading(false);
+      throw error;
     }
+    setLoading(false);
   };
 
   const logout = () => {
@@ -59,7 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

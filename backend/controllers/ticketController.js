@@ -1,8 +1,18 @@
 import Ticket from '../models/Ticket.js';
 import User from '../models/User.js';
 
-// @desc    Get all tickets with pagination
-// @route   GET /api/tickets
+/**
+ * Get all tickets with pagination
+ * @desc    Get all tickets with pagination
+ * @route   GET /api/tickets
+ * @access  Public
+ * @param {Object} req - Express request object
+ * @param {Object} req.query - Query parameters
+ * @param {number} req.query.page - Page number (default: 1)
+ * @param {number} req.query.limit - Items per page (default: 10)
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>} JSON response with paginated tickets
+ */
 export const getAllTickets = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -43,8 +53,19 @@ export const getUserTickets = async (req, res) => {
     }
 };
 
-// @desc    Create new ticket
-// @route   POST /api/tickets
+/**
+ * Create a new ticket
+ * @desc    Create new ticket
+ * @route   POST /api/tickets
+ * @access  Public
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.title - Ticket title (max 100 chars)
+ * @param {string} req.body.description - Ticket description
+ * @param {string} req.body.ownerId - ID of ticket owner
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>} JSON response with created ticket
+ */
 export const createTicket = async (req, res) => {
     try {
         const { title, description, ownerId } = req.body;

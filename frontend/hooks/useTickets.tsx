@@ -4,10 +4,11 @@ import * as api from '../services/api';
 
 export const useTickets = (user: User | null) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const lastFetchTime = useRef<number>(0);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitialized = useRef<boolean>(false);
 
   const fetchTickets = useCallback(async (showLoading = true, force = false) => {
     if (!user) return;
@@ -34,7 +35,8 @@ export const useTickets = (user: User | null) => {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasInitialized.current) {
+      hasInitialized.current = true;
       fetchTickets(true, true); // Force initial fetch
 
       // Poll for updates every 30 seconds to reflect automated changes from backend
