@@ -14,7 +14,7 @@ export default defineConfig({
       }
     },
     // Performance optimizations
-    minify: 'terser',
+    minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
     // Faster builds
