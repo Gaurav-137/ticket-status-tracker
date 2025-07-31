@@ -3,7 +3,7 @@ import { User, Ticket, TicketStatus, StatusHistory } from '../types';
 // API URL with environment detection
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5001/api'
-  : 'https://ticket-tracker-backend.onrender.com/api';
+  : 'https://ticket-status-tracker.onrender.com/api';
 
 // Cache for API responses to improve performance
 const apiCache = new Map();
