@@ -14,11 +14,15 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [process.env.FRONTEND_URL, 'https://*.vercel.app']
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5001'];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-vercel-app.vercel.app']
-    : ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Import routes
