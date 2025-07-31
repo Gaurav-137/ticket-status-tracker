@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { specs, swaggerUi } from './config/swagger.js';
 import './jobs/ticketProgression.js';
 
 // Load environment variables
@@ -26,13 +27,39 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Ticket Tracker API Documentation'
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 
-// Health check route
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Check if the API is running
+ *     responses:
+ *       200:
+ *         description: API is running successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Ticket Status Tracker API is running!
+ */
 app.get('/', (req, res) => {
-  res.json({ message: 'Ticket Status Tracker API is running!' });
+  res.json({ 
+    message: 'Ticket Status Tracker API is running!',
+    documentation: '/api-docs'
+  });
 });
 
 // Error handling middleware
