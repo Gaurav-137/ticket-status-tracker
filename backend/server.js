@@ -13,18 +13,10 @@ const app = express();
 // Body parser
 app.use(express.json());
 
-// Enable CORS
-const allowedOrigins = [
-  'https://ticket-status-tracker.vercel.app',
-  'https://ticket-status-tracker-gaurav-lads-projects-cb927cc7.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5001'
-];
-
+// Enable CORS - Allow all origins temporarily
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
+  origin: '*',
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
