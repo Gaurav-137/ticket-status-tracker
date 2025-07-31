@@ -4,7 +4,7 @@ import { User, Ticket, TicketStatus, StatusHistory } from '../types';
 const API_BASE_URL = (import.meta as any).env.VITE_API_URL || (
   window.location.hostname === 'localhost'
     ? 'http://localhost:5001/api'
-    : 'https://ticket-status-tracker.onrender.com//api'
+    : 'https://ticket-status-tracker.onrender.com/api'
 );
 
 // Cache for API responses to improve performance
