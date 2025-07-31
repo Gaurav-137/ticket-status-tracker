@@ -48,14 +48,16 @@ await ticket.save();
         }
     }
     
-    // Send batched emails
+    // Send batched emails asynchronously (don't wait)
     for (const [email, tickets] of completedTicketsByUser.entries()) {
-        await sendBatchDoneNotification(email, tickets);
+        sendBatchDoneNotification(email, tickets).catch(err => 
+            console.error('Email sending failed:', err)
+        );
     }
 };
 
-// Schedule to run every minute
-const job = cron.schedule('* * * * *', checkAndProgressTickets, {
+// Schedule to run every 2 minutes to reduce load
+const job = cron.schedule('*/2 * * * *', checkAndProgressTickets, {
     scheduled: false // Do not start automatically
 });
 

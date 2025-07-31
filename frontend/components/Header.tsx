@@ -16,19 +16,25 @@ const Header: React.FC = () => {
             </svg>
             <span className="ml-3 text-2xl font-bold text-slate-900 dark:text-white">Ticket Tracker</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             {user && (
-              <div className="flex items-center">
-                <span className="text-slate-600 dark:text-slate-300 mr-4">
-                  Welcome, <span className="font-semibold">{user.name}</span>
-                </span>
+              <>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+                  </div>
+                </div>
                 <button
                   onClick={logout}
-                  className="px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-secondary dark:focus:ring-offset-slate-800"
+                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
                 >
                   Logout
                 </button>
-              </div>
+              </>
             )}
           </div>
         </div>

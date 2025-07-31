@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Ticket, TicketStatus } from '../types';
 import StatusBadge from './StatusBadge';
 import { STATUS_WORKFLOW } from '../constants';
@@ -14,6 +14,25 @@ interface TicketCardProps {
 const TicketCard: React.FC<TicketCardProps> = ({ ticket, onEdit, onDelete, onStatusChange }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -33,11 +52,11 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, onEdit, onDelete, onSta
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex flex-col justify-between cursor-pointer group min-h-[200px]">
       <div className="p-5">
         <div className="flex justify-between items-start">
           <StatusBadge status={ticket.status} />
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen(!menuOpen)} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -51,15 +70,15 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, onEdit, onDelete, onSta
             )}
           </div>
         </div>
-        <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white truncate">{ticket.title}</h3>
+        <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">{ticket.title}</h3>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 h-10 overflow-hidden text-ellipsis">{ticket.description}</p>
       </div>
-      <div className="px-5 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-b-lg flex justify-between items-center">
-        <div className="text-xs text-slate-500 dark:text-slate-400">
+      <div className="px-5 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-b-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <div className="text-xs text-slate-500 dark:text-slate-400 order-2 sm:order-1">
             Updated {timeAgo(ticket.updatedAt)}
         </div>
-        <div className="relative">
-            <button onClick={() => setStatusMenuOpen(!statusMenuOpen)} disabled={ticket.status === TicketStatus.Done} className="px-3 py-1 text-sm bg-brand-secondary text-white rounded-md hover:bg-brand-secondary/90 disabled:bg-slate-400 disabled:cursor-not-allowed">
+        <div className="relative order-1 sm:order-2" ref={statusMenuRef}>
+            <button onClick={() => setStatusMenuOpen(!statusMenuOpen)} disabled={ticket.status === TicketStatus.Done} className="px-3 py-1 text-xs sm:text-sm bg-brand-secondary text-white rounded-md hover:bg-brand-secondary/90 disabled:bg-slate-400 disabled:cursor-not-allowed w-full sm:w-auto">
                 Change Status
             </button>
             {statusMenuOpen && (
