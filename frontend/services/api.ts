@@ -1,7 +1,7 @@
 import { User, Ticket, TicketStatus, StatusHistory } from '../types';
 
 // API URL with environment detection
-const API_BASE_URL = import.meta.env.VITE_API_URL || (
+const API_BASE_URL = (import.meta as any).env.VITE_API_URL || (
   window.location.hostname === 'localhost'
     ? 'http://localhost:5001/api'
     : 'https://ticket-status-tracker.onrender.com/api'
